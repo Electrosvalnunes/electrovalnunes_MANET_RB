@@ -18,7 +18,7 @@ from sklearn.preprocessing import label_binarize
 warnings.filterwarnings("ignore")
 
 
-# ============================================================
+
 # 1) PADRONIZAÇÃO DO DATASET
 # ============================================================
 #def padronizar_Dataset_electrosvalnunes_manet(df):
@@ -78,7 +78,7 @@ def padronizar_Dataset_electrosvalnunes_manet(df):
     return df
 
 
-# ============================================================
+
 # 2) UTILITÁRIOS NUMÉRICOS
 # ============================================================
 def softmax(logits):
@@ -93,7 +93,7 @@ def mean_std(values):
     return float(np.mean(arr)), float(np.std(arr))
 
 
-# ============================================================
+
 # 3) PRÉ-PROCESSAMENTO
 # ============================================================
 def adicionar_atributos_relativos_ao_baseline(
@@ -132,7 +132,7 @@ def adicionar_atributos_relativos_ao_baseline(
     return df
 
 
-# ============================================================
+
 # 4) DISCRETIZAÇÃO SEM LEAKAGE
 # ============================================================
 def construir_rotulos_bins(n_bins):
@@ -186,7 +186,7 @@ def discretizar_por_topologia_sem_leakage(
     return train_df, test_df, labels
 
 
-# ============================================================
+
 # 5) GRÁFICOS
 # ============================================================
 def plot_confusion(cm, labels, title, outpath):
@@ -227,7 +227,7 @@ def roc_auc_ovr_macro(y_true, y_score, classes):
     if y_score.ndim == 1:
         y_score = y_score.reshape(-1, 1)
 
-    # ========================================================
+    
     # CASO BINÁRIO
     # ========================================================
     if len(classes) == 2:
@@ -266,7 +266,7 @@ def roc_auc_ovr_macro(y_true, y_score, classes):
 
         return roc_auc_macro, (all_fpr, mean_tpr, roc_auc, fpr, tpr, overlap_flags)
 
-    # ========================================================
+    
     # CASO MULTICLASSE
     # ========================================================
     y_true_bin = label_binarize(y_true, classes=classes)
@@ -373,7 +373,7 @@ def plot_roc_melhorada(
     plt.close()
 
 
-# ============================================================
+
 # 6) NÚCLEO DO MODELO BAYESIANO DISCRETO
 # ============================================================
 def treinar_cpts_discretas(
@@ -427,7 +427,7 @@ def inferir_amostra(row, classes, disc_metrics, cpts, prior_attack, topo_observa
     return pred, probas.tolist()
 
 
-# ============================================================
+
 # 7) EXPERIMENTO PRINCIPAL
 # ============================================================
 def executar_experimento_rb_otimizado(
@@ -670,7 +670,7 @@ def executar_experimento_rb_otimizado(
 if __name__ == "__main__":
     executar_experimento_rb_otimizado(
         file_path="Dataset_electrosvalnunes_manet.csv",
-        n_iteracoes=10,#100
+        n_iteracoes=100,#50
         train_per_combo=2000,#40,
         test_per_combo=1000,#10,
         n_bins=5,
