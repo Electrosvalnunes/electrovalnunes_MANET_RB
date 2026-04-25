@@ -12,7 +12,7 @@ print("Armazenar os arquivos em:", output_dir.resolve())
 
 
 
-# ============================================================
+
 # 1. CONFIGURAÇÃO INICIAL
 # ============================================================
 
@@ -24,7 +24,7 @@ df.columns = [c.strip() for c in df.columns]
 print("Colunas encontradas no dataset:")
 print(df.columns.tolist())
 
-# ============================================================
+
 # 2. AJUSTE DOS NOMES DAS COLUNAS
 #    Altere aqui se no seu CSV os nomes forem diferentes
 # ============================================================
@@ -50,7 +50,7 @@ print("Coluna Throughput:", throughput_col)
 print("Coluna Delay:", delay_col)
 print("Coluna Energy:", energy_col)
 
-# ============================================================
+
 # 3. FILTRAR TOPOLOGIAS E CENÁRIOS
 # ============================================================
 
@@ -62,7 +62,7 @@ df[scenario_col] = df[scenario_col].astype(str)
 scenario_order = ["Normal", "Flooding"]
 node_order = [30, 50, 100]
 
-# ============================================================
+
 # 4. CALCULAR MÉDIA E DESVIO-PADRÃO
 # ============================================================
 
@@ -89,7 +89,7 @@ print(stats.round(3))
 stats.to_csv(output_dir / "metricas_media_desvio_padrao.csv", index=False)
 print("\nTabela salva em: metricas_media_desvio_padrao.csv")
 
-# ============================================================
+
 # 5. FUNÇÃO AUXILIAR PARA PEGAR MÉDIA E DESVIO
 # ============================================================
 
@@ -112,7 +112,7 @@ def get_values(metric_mean, metric_std, scenario):
 
     return np.array(means), np.array(stds)
 
-# ============================================================
+
 # 6. GRÁFICO 1 — PDR + THROUGHPUT
 # ============================================================
 
@@ -267,7 +267,7 @@ plt.savefig(output_dir /"PDR_Throughput_calculated_dataset.png", dpi=300, bbox_i
 plt.savefig(output_dir /"PDR_Throughput_calculated_dataset.pdf", bbox_inches="tight")
 plt.show()
 
-# ============================================================
+
 # 7. GRÁFICO 2 — DELAY + ENERGY COM BOXPLOT
 # ============================================================
 
