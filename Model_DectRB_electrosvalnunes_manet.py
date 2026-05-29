@@ -20,23 +20,10 @@ warnings.filterwarnings("ignore")
 
 
 # 1) PADRONIZAÇÃO DO DATASET
-# ============================================================
-#def padronizar_Dataset_electrosvalnunes_manet(df):
 def padronizar_Dataset_electrosvalnunes_manet(df):
 
     """
-    Converte o dataset enviado para os nomes esperados pelo modelo bayesiano.
-
-    Mapeamento aplicado:
-    - Scenario -> scenario
-    - Total_Nodes -> topologyNodes
-    - PDR_Percentage -> PDR
-    - E2E_Delay_ms -> delayMean_ms
-    - Throughput_Kbps -> throughput_bps (convertido para bps)
-    - Energy_Consumed_J -> energyMean_J
-
-    Colunas extras preservadas:
-    - Rep_ID, Node_ID, Queue_Drops, Is_Attacker
+    Ajustar os nomes das colunas do dataframe para o esquema da RB.
     """
     df = df.copy()
 
@@ -49,7 +36,6 @@ def padronizar_Dataset_electrosvalnunes_manet(df):
     }
     df = df.rename(columns=rename_map)
 
-    # Throughput: no dataset está em Kbps; o modelo original espera bps.
     if "Throughput_Kbps" in df.columns:
         df["throughput_bps"] = pd.to_numeric(df["Throughput_Kbps"], errors="coerce") * 1000.0
     elif "throughput_bps" not in df.columns:
@@ -60,16 +46,16 @@ def padronizar_Dataset_electrosvalnunes_manet(df):
     if faltando:
         raise ValueError(f"Faltam colunas obrigatórias no dataset: {faltando}")
 
-    # Garantir tipos numéricos
+
     for col in ["topologyNodes", "PDR", "delayMean_ms", "throughput_bps", "energyMean_J"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    # Limpeza básica
+    
     df = df.dropna(subset=required).copy()
     df["scenario"] = df["scenario"].astype(str).str.strip()
     df["topologyNodes"] = df["topologyNodes"].astype(int)
 
-    # Remover linhas absurdas
+    
     df = df[df["PDR"] >= 0].copy()
     df = df[df["delayMean_ms"] >= 0].copy()
     df = df[df["energyMean_J"] >= 0].copy()
@@ -79,8 +65,8 @@ def padronizar_Dataset_electrosvalnunes_manet(df):
 
 
 
-# 2) UTILITÁRIOS NUMÉRICOS
-# ============================================================
+# 2) FUNÇOES MATEMATICAS AUXILIARES 
+
 def softmax(logits):
     logits = np.asarray(logits, dtype=float)
     m = np.max(logits)
@@ -95,7 +81,7 @@ def mean_std(values):
 
 
 # 3) PRÉ-PROCESSAMENTO
-# ============================================================
+
 def adicionar_atributos_relativos_ao_baseline(
     df,
     metricas_base,
@@ -134,7 +120,6 @@ def adicionar_atributos_relativos_ao_baseline(
 
 
 # 4) DISCRETIZAÇÃO SEM LEAKAGE
-# ============================================================
 def construir_rotulos_bins(n_bins):
     if n_bins == 3:
         return ["Low", "Medium", "High"]
@@ -188,7 +173,6 @@ def discretizar_por_topologia_sem_leakage(
 
 
 # 5) GRÁFICOS
-# ============================================================
 def plot_confusion(cm, labels, title, outpath):
     fig, ax = plt.subplots(figsize=(8, 6))
     im = ax.imshow(cm, cmap="Blues")
@@ -213,14 +197,7 @@ def plot_confusion(cm, labels, title, outpath):
 
 
 def roc_auc_ovr_macro(y_true, y_score, classes):
-    """
-    Calcula ROC-AUC por classe (OvR) e macro-average.
-    Funciona para binário e multiclasse.
-
-    Retorna:
-    - roc_auc_macro
-    - (all_fpr, mean_tpr, roc_auc, fpr, tpr, overlap_flags)
-    """
+   
     classes = list(classes)
     y_score = np.asarray(y_score, dtype=float)
 
@@ -228,8 +205,6 @@ def roc_auc_ovr_macro(y_true, y_score, classes):
         y_score = y_score.reshape(-1, 1)
 
     
-    # CASO BINÁRIO
-    # ========================================================
     if len(classes) == 2:
         # Se vier só uma coluna, reconstruímos a outra
         if y_score.shape[1] == 1:
@@ -267,8 +242,7 @@ def roc_auc_ovr_macro(y_true, y_score, classes):
         return roc_auc_macro, (all_fpr, mean_tpr, roc_auc, fpr, tpr, overlap_flags)
 
     
-    # CASO MULTICLASSE
-    # ========================================================
+    
     y_true_bin = label_binarize(y_true, classes=classes)
 
     fpr = {}
@@ -311,9 +285,7 @@ def plot_roc_melhorada(
     titulo,
     outpath,
 ):
-    """
-    Gera curva ROC com melhor legibilidade visual.
-    """
+    
     fig, ax = plt.subplots(figsize=(10, 8))
 
     # Curva macro
@@ -375,7 +347,6 @@ def plot_roc_melhorada(
 
 
 # 6) NÚCLEO DO MODELO BAYESIANO DISCRETO
-# ============================================================
 def treinar_cpts_discretas(
     train_df,
     disc_metrics,
@@ -428,8 +399,7 @@ def inferir_amostra(row, classes, disc_metrics, cpts, prior_attack, topo_observa
 
 
 
-# 7) EXPERIMENTO PRINCIPAL
-# ============================================================
+# 7) PIPELINE PRINCIPAL
 def executar_experimento_rb_otimizado(
     file_path,
     n_iteracoes=100,
@@ -447,7 +417,6 @@ def executar_experimento_rb_otimizado(
 
     rng = np.random.default_rng(seed)
     df_raw = pd.read_csv(file_path)
-    #df = padronizar_dataset_manet(df_raw)
     df = padronizar_Dataset_electrosvalnunes_manet(df_raw)
 
     metricas_originais = ["PDR", "delayMean_ms", "throughput_bps", "energyMean_J"]
@@ -455,19 +424,9 @@ def executar_experimento_rb_otimizado(
     if usar_atributos_derivados:
         df = adicionar_atributos_relativos_ao_baseline(df, metricas_originais)
         metrics = [
-            "PDR",
-            "delayMean_ms",
-            "throughput_bps",
-            "energyMean_J",
-            "PDR_zbase",
-            "delayMean_ms_zbase",
-            "throughput_bps_zbase",
-            "energyMean_J_zbase",
-            "efficiency_tp_energy",
-            "delay_over_pdr",
-            "energy_over_pdr",
-            "delay_log",
-            "energy_log",
+            "PDR", "delayMean_ms", "throughput_bps", "energyMean_J",
+            "PDR_zbase", "delayMean_ms_zbase", "throughput_bps_zbase", "energyMean_J_zbase",
+            "efficiency_tp_energy", "delay_over_pdr", "energy_over_pdr", "delay_log", "energy_log"
         ]
     else:
         metrics = metricas_originais.copy()
@@ -475,33 +434,18 @@ def executar_experimento_rb_otimizado(
     topologias = sorted(df["topologyNodes"].unique().tolist())
     cenarios = sorted(df["scenario"].unique().tolist())
 
-    print("=" * 90)
-    print("DATASET PADRONIZADO COM SUCESSO")
-    print(f"Arquivo lido: {file_path}")
-    print(f"Topologias encontradas: {topologias}")
-    print(f"Cenários encontrados: {cenarios}")
-    print(f"Total de amostras válidas: {len(df)}")
-    print("=" * 90)
+    print(f"Log: Dataset liso. Alvos: {cenarios} | Topologias: {topologias} | N: {len(df)}")
 
     resultados = {
         n: {
-            "acc": [],
-            "precision_macro": [],
-            "recall_macro": [],
-            "f1_macro": [],
-            "roc_auc_macro": [],
-            "cm_iter": [],
-            "y_real_all": [],
-            "y_proba_all": [],
+            "acc": [], "precision_macro": [], "recall_macro": [], "f1_macro": [],
+            "roc_auc_macro": [], "cm_iter": [], "y_real_all": [], "y_proba_all": []
         }
         for n in topologias
     }
 
     for it in range(n_iteracoes):
-        print(f"\nIteração {it + 1}/{n_iteracoes}")
-
-        train_idx = []
-        test_idx = []
+        train_idx, test_idx = [], []
 
         for n in topologias:
             df_n = df[df["topologyNodes"] == n]
@@ -522,40 +466,25 @@ def executar_experimento_rb_otimizado(
         test_df = df.loc[test_idx].copy()
 
         train_df, test_df, estados = discretizar_por_topologia_sem_leakage(
-            train_df=train_df,
-            test_df=test_df,
-            metrics=metrics,
-            topo_col="topologyNodes",
-            n_bins=n_bins,
+            train_df=train_df, test_df=test_df, metrics=metrics, topo_col="topologyNodes", n_bins=n_bins
         )
         disc_metrics = [m + "_d" for m in metrics]
 
         cpts = treinar_cpts_discretas(
-            train_df=train_df,
-            disc_metrics=disc_metrics,
-            estados=estados,
-            classe_col="scenario",
-            topo_col="topologyNodes",
-            laplace=laplace,
+            train_df=train_df, disc_metrics=disc_metrics, estados=estados,
+            classe_col="scenario", topo_col="topologyNodes", laplace=laplace
         )
 
         prior_attack = {s: 1.0 / len(cenarios) for s in cenarios}
 
         for n in topologias:
             test_n = test_df[test_df["topologyNodes"] == n]
-            y_real = []
-            y_pred = []
-            y_proba = []
+            y_real, y_pred, y_proba = [], [], []
 
             for _, row in test_n.iterrows():
                 pred, probas = inferir_amostra(
-                    row=row,
-                    classes=cenarios,
-                    disc_metrics=disc_metrics,
-                    cpts=cpts,
-                    prior_attack=prior_attack,
-                    topo_observada=n,
-                    estados=estados,
+                    row=row, classes=cenarios, disc_metrics=disc_metrics, cpts=cpts,
+                    prior_attack=prior_attack, topo_observada=n, estados=estados
                 )
                 y_real.append(row["scenario"])
                 y_pred.append(pred)
@@ -578,13 +507,6 @@ def executar_experimento_rb_otimizado(
             resultados[n]["y_proba_all"].extend(y_proba)
 
     linhas_resumo = []
-    print("\n" + "=" * 90)
-    print("RESULTADOS FINAIS | RB OTIMIZADA | DATASET MANET ADAPTADO")
-    print(f"Arquivo: {file_path}")
-    print(f"Iterações: {n_iteracoes} | treino={train_per_combo} | teste={test_per_combo} | bins={n_bins}")
-    print(f"Seed global: {seed} | Atributos derivados: {usar_atributos_derivados}")
-    print("=" * 90)
-
     for n in topologias:
         acc_m, acc_s = mean_std(resultados[n]["acc"])
         prec_m, prec_s = mean_std(resultados[n]["precision_macro"])
@@ -593,86 +515,49 @@ def executar_experimento_rb_otimizado(
         auc_m, auc_s = mean_std(resultados[n]["roc_auc_macro"])
 
         roc_macro_global, roc_pack = roc_auc_ovr_macro(
-            resultados[n]["y_real_all"],
-            resultados[n]["y_proba_all"],
-            classes=cenarios,
+            resultados[n]["y_real_all"], resultados[n]["y_proba_all"], classes=cenarios
         )
 
-        print(f"\nTOPOLOGIA {n} nós")
-        print(f"Accuracy:        {acc_m:.4f} ± {acc_s:.4f}")
-        print(f"Precision Macro: {prec_m:.4f} ± {prec_s:.4f}")
-        print(f"Recall Macro:    {rec_m:.4f} ± {rec_s:.4f}")
-        print(f"F1 Macro:        {f1_m:.4f} ± {f1_s:.4f}")
-        print(f"ROC-AUC Macro:   {auc_m:.4f} ± {auc_s:.4f}")
-        print(f"ROC-AUC Global:  {roc_macro_global:.4f}")
+        print(f"\n--- Métricas Finais - {n} nós ---")
+        print(f"Accuracy:  {acc_m:.4f} ± {acc_s:.4f}")
+        print(f"F1 Macro:  {f1_m:.4f} ± {f1_s:.4f}")
+        print(f"ROC AUC:   {auc_m:.4f} ± {auc_s:.4f}")
 
         f1_list = np.asarray(resultados[n]["f1_macro"], dtype=float)
         idx_rep = int(np.argmin(np.abs(f1_list - f1_m)))
         cm_rep = resultados[n]["cm_iter"][idx_rep]
 
-        out_cm = output_dir / f"matriz_confusao_{n}_nos_representativa.png"
         plot_confusion(
-            cm_rep,
-            labels=cenarios,
-            title=f"Matriz de Confusão - {n} nós",
-            outpath=out_cm,
+            cm_rep, labels=cenarios, title=f"Matriz de Confusão - {n} nós",
+            outpath=output_dir / f"matriz_confusao_{n}_nos_representativa.png"
         )
 
         all_fpr, mean_tpr, roc_auc_ind, fpr_ind, tpr_ind, overlap_flags = roc_pack
-
-        out_roc = output_dir / f"roc_auc_{n}_nos_global.png"
         plot_roc_melhorada(
-            all_fpr=all_fpr,
-            mean_tpr=mean_tpr,
-            roc_auc_macro=roc_macro_global,
-            roc_auc_ind=roc_auc_ind,
-            fpr_ind=fpr_ind,
-            tpr_ind=tpr_ind,
-            classes=cenarios,
-            titulo=f"Curva ROC (OvR) - {n} nós",
-            outpath=out_roc,
+            all_fpr=all_fpr, mean_tpr=mean_tpr, roc_auc_macro=roc_macro_global,
+            roc_auc_ind=roc_auc_ind, fpr_ind=fpr_ind, tpr_ind=tpr_ind, classes=cenarios,
+            titulo=f"Curva ROC (OvR) - {n} nós", outpath=output_dir / f"roc_auc_{n}_nos_global.png"
         )
 
-        for (i, j), is_overlap in overlap_flags.items():
-            if is_overlap:
-                print(
-                    f"[Aviso] Em {n} nós, as curvas ROC de '{cenarios[i]}' e '{cenarios[j]}' "
-                    f"estão praticamente sobrepostas."
-                )
-
-        linhas_resumo.append(
-            {
-                "topologyNodes": n,
-                "accuracy_mean": acc_m,
-                "accuracy_std": acc_s,
-                "precision_macro_mean": prec_m,
-                "precision_macro_std": prec_s,
-                "recall_macro_mean": rec_m,
-                "recall_macro_std": rec_s,
-                "f1_macro_mean": f1_m,
-                "f1_macro_std": f1_s,
-                "roc_auc_macro_mean": auc_m,
-                "roc_auc_macro_std": auc_s,
-                "roc_auc_global": roc_macro_global,
-            }
-        )
+        linhas_resumo.append({
+            "topologyNodes": n, "accuracy_mean": acc_m, "accuracy_std": acc_s,
+            "precision_macro_mean": prec_m, "precision_macro_std": prec_s,
+            "recall_macro_mean": rec_m, "recall_macro_std": rec_s,
+            "f1_macro_mean": f1_m, "f1_macro_std": f1_s,
+            "roc_auc_macro_mean": auc_m, "roc_auc_macro_std": auc_s, "roc_auc_global": roc_macro_global
+        })
 
     resumo_df = pd.DataFrame(linhas_resumo)
-    resumo_csv = output_dir / "resumo_metricas_por_topologia.csv"
-    resumo_df.to_csv(resumo_csv, index=False)
-
-    print(f"\nResumo salvo em: {resumo_csv}")
-    print("\nConcluído.")
-
+    resumo_df.to_csv(output_dir / "resumo_metricas_por_topologia.csv", index=False)
     return resumo_df
 
 
 if __name__ == "__main__":
     executar_experimento_rb_otimizado(
         file_path="Dataset_electrosvalnunes_manet.csv",
-        n_iteracoes=100,#50
-        train_per_combo=2000,#40,
-        test_per_combo=1000,#10,
+        n_iteracoes=100,
+        train_per_combo=2000,
+        test_per_combo=1000,
         n_bins=5,
         seed=42,
         usar_atributos_derivados=True,
