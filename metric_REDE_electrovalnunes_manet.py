@@ -11,12 +11,9 @@ output_dir.mkdir(exist_ok=True)
 print("Armazenar os arquivos em:", output_dir.resolve())
 
 
-
-
 # 1. CONFIGURAÇÃO INICIAL
-# ============================================================
 
-dataset_path = "Dataset_electrosvalnunes_manet.csv"   # coloque aqui o nome do seu arquivo CSV
+dataset_path = "Dataset_electrosvalnunes_manet.csv" 
 
 df = pd.read_csv(dataset_path)
 df.columns = [c.strip() for c in df.columns]
@@ -26,8 +23,6 @@ print(df.columns.tolist())
 
 
 # 2. AJUSTE DOS NOMES DAS COLUNAS
-#    Altere aqui se no seu CSV os nomes forem diferentes
-# ============================================================
 
 def find_col(possible_names):
     for name in possible_names:
@@ -52,8 +47,6 @@ print("Coluna Energy:", energy_col)
 
 
 # 3. FILTRAR TOPOLOGIAS E CENÁRIOS
-# ============================================================
-
 df[nodes_col] = pd.to_numeric(df[nodes_col], errors="coerce")
 
 df = df[df[nodes_col].isin([30, 50, 100])]
@@ -64,7 +57,6 @@ node_order = [30, 50, 100]
 
 
 # 4. CALCULAR MÉDIA E DESVIO-PADRÃO
-# ============================================================
 
 stats = (
     df.groupby([nodes_col, scenario_col])
@@ -91,7 +83,6 @@ print("\nTabela salva em: metricas_media_desvio_padrao.csv")
 
 
 # 5. FUNÇÃO AUXILIAR PARA PEGAR MÉDIA E DESVIO
-# ============================================================
 
 def get_values(metric_mean, metric_std, scenario):
     means = []
@@ -114,7 +105,6 @@ def get_values(metric_mean, metric_std, scenario):
 
 
 # 6. GRÁFICO 1 — PDR + THROUGHPUT
-# ============================================================
 
 pdr_normal, pdr_normal_std = get_values("PDR_mean", "PDR_std", "Normal")
 pdr_flood, pdr_flood_std = get_values("PDR_mean", "PDR_std", "Flooding")
@@ -140,7 +130,6 @@ offsets = np.array([-bar_width, 0, bar_width])
 labels = ["N30", "N50", "N100"]
 colors = ["#d9eaf7", "#6f98c4", "#3f3f3f"]
 
-# ---------------- PDR ----------------
 ax = axes[0]
 
 pdr_values = np.vstack([pdr_normal, pdr_flood]).T
@@ -201,7 +190,6 @@ ax.annotate(
     ),
 )
 
-# ---------------- Throughput ----------------
 ax = axes[1]
 
 thr_values = np.vstack([thr_normal, thr_flood]).T
@@ -269,7 +257,6 @@ plt.show()
 
 
 # 7. GRÁFICO 2 — DELAY + ENERGY COM BOXPLOT
-# ============================================================
 
 plot_df = df[[nodes_col, scenario_col, delay_col, energy_col]].copy()
 plot_df.columns = ["Nodes", "Scenario", "Delay", "Energy"]
@@ -293,7 +280,6 @@ legend_handles = [
     for t in topo_order
 ]
 
-# ---------------- Delay ----------------
 ax = axes[0]
 
 for i, topo in enumerate(topo_order):
@@ -346,7 +332,6 @@ ax.legend(
     frameon=True,
 )
 
-# ---------------- Energy ----------------
 ax = axes[1]
 
 for i, topo in enumerate(topo_order):
