@@ -18,12 +18,11 @@ from sklearn.preprocessing import label_binarize
 warnings.filterwarnings("ignore")
 
 
-
-# 1) PADRONIZAÇÃO DO DATASET
+# --- Dataset Normalization and Ingestion ---
 def padronizar_Dataset_electrosvalnunes_manet(df):
-
     """
-    Ajustar os nomes das colunas do dataframe para o esquema da RB.
+    Normalizes dataset column headers to match the Bayesian Network schema
+    and converts throughput metrics from Kbps to bits per second (bps).
     """
     df = df.copy()
 
@@ -39,34 +38,32 @@ def padronizar_Dataset_electrosvalnunes_manet(df):
     if "Throughput_Kbps" in df.columns:
         df["throughput_bps"] = pd.to_numeric(df["Throughput_Kbps"], errors="coerce") * 1000.0
     elif "throughput_bps" not in df.columns:
-        raise ValueError("Não encontrei nem 'Throughput_Kbps' nem 'throughput_bps' no dataset.")
+        raise ValueError("Required throughput column (Kbps or bps) not found in the source dataset.")
 
     required = ["scenario", "topologyNodes", "PDR", "delayMean_ms", "throughput_bps", "energyMean_J"]
-    faltando = [c for c in required if c not in df.columns]
-    if faltando:
-        raise ValueError(f"Faltam colunas obrigatórias no dataset: {faltando}")
-
+    missing_cols = [c for c in required if c not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Missing mandatory structural attributes: {missing_cols}")
 
     for col in ["topologyNodes", "PDR", "delayMean_ms", "throughput_bps", "energyMean_J"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    
     df = df.dropna(subset=required).copy()
     df["scenario"] = df["scenario"].astype(str).str.strip()
     df["topologyNodes"] = df["topologyNodes"].astype(int)
 
-    
-    df = df[df["PDR"] >= 0].copy()
-    df = df[df["delayMean_ms"] >= 0].copy()
-    df = df[df["energyMean_J"] >= 0].copy()
-    df = df[df["throughput_bps"] >= 0].copy()
+    # Sanity filter to ensure physical consistency
+    df = df[
+        (df["PDR"] >= 0) & 
+        (df["delayMean_ms"] >= 0) & 
+        (df["energyMean_J"] >= 0) & 
+        (df["throughput_bps"] >= 0)
+    ].copy()
 
     return df
 
 
-
-# 2) FUNÇOES MATEMATICAS AUXILIARES 
-
+# --- Mathematical Auxiliary Functions ---
 def softmax(logits):
     logits = np.asarray(logits, dtype=float)
     m = np.max(logits)
@@ -79,9 +76,7 @@ def mean_std(values):
     return float(np.mean(arr)), float(np.std(arr))
 
 
-
-# 3) PRÉ-PROCESSAMENTO
-
+# --- Feature Engineering & Baseline Calculation ---
 def adicionar_atributos_relativos_ao_baseline(
     df,
     metricas_base,
@@ -93,10 +88,7 @@ def adicionar_atributos_relativos_ao_baseline(
 
     baseline_df = df[df[classe_col] == baseline_label].copy()
     if baseline_df.empty:
-        raise ValueError(
-            f"Não existe cenário baseline '{baseline_label}' no dataset. "
-            "Verifique os nomes da coluna Scenario."
-        )
+        raise ValueError(f"Control/baseline class '{baseline_label}' was not found in the dataset.")
 
     baseline = baseline_df.groupby(topo_col)[metricas_base].agg(["mean", "std"])
 
@@ -104,6 +96,7 @@ def adicionar_atributos_relativos_ao_baseline(
         medias = baseline[(m, "mean")]
         desvios = baseline[(m, "std")].replace(0, 1e-9)
 
+        # Compute relative Z-Score against stable network operation profiles
         df[f"{m}_zbase"] = (
             (df[m] - df[topo_col].map(medias)) / df[topo_col].map(desvios)
         ).astype(float)
@@ -118,8 +111,7 @@ def adicionar_atributos_relativos_ao_baseline(
     return df
 
 
-
-# 4) DISCRETIZAÇÃO SEM LEAKAGE
+# --- Leakage-Free Spatial Discretization ---
 def construir_rotulos_bins(n_bins):
     if n_bins == 3:
         return ["Low", "Medium", "High"]
@@ -171,8 +163,7 @@ def discretizar_por_topologia_sem_leakage(
     return train_df, test_df, labels
 
 
-
-# 5) GRÁFICOS
+# --- Visualization and Performance Plotting ---
 def plot_confusion(cm, labels, title, outpath):
     fig, ax = plt.subplots(figsize=(8, 6))
     im = ax.imshow(cm, cmap="Blues")
@@ -188,8 +179,8 @@ def plot_confusion(cm, labels, title, outpath):
     ax.set_xticklabels(labels, rotation=30, ha="right")
     ax.set_yticklabels(labels)
     ax.set_title(title, fontsize=13, fontweight="bold")
-    ax.set_ylabel("Real", fontsize=12)
-    ax.set_xlabel("Predito", fontsize=12)
+    ax.set_ylabel("True Label", fontsize=12)
+    ax.set_xlabel("Predicted Label", fontsize=12)
     plt.colorbar(im)
     plt.tight_layout()
     plt.savefig(outpath, dpi=400, bbox_inches="tight")
@@ -197,25 +188,19 @@ def plot_confusion(cm, labels, title, outpath):
 
 
 def roc_auc_ovr_macro(y_true, y_score, classes):
-   
     classes = list(classes)
     y_score = np.asarray(y_score, dtype=float)
 
     if y_score.ndim == 1:
         y_score = y_score.reshape(-1, 1)
 
-    
     if len(classes) == 2:
-        # Se vier só uma coluna, reconstruímos a outra
         if y_score.shape[1] == 1:
             y_score = np.hstack([1 - y_score, y_score])
         elif y_score.shape[1] != 2:
-            raise ValueError("Para problema binário, y_score deve ter 1 ou 2 colunas.")
+            raise ValueError("Invalid score vector shape for binary classification.")
 
-        fpr = {}
-        tpr = {}
-        roc_auc = {}
-
+        fpr, tpr, roc_auc = {}, {}, {}
         for i, cls in enumerate(classes):
             y_bin = (np.asarray(y_true) == cls).astype(int)
             fpr[i], tpr[i], _ = roc_curve(y_bin, y_score[:, i])
@@ -241,13 +226,8 @@ def roc_auc_ovr_macro(y_true, y_score, classes):
 
         return roc_auc_macro, (all_fpr, mean_tpr, roc_auc, fpr, tpr, overlap_flags)
 
-    
-    
     y_true_bin = label_binarize(y_true, classes=classes)
-
-    fpr = {}
-    tpr = {}
-    roc_auc = {}
+    fpr, tpr, roc_auc = {}, {}, {}
 
     for i in range(len(classes)):
         fpr[i], tpr[i], _ = roc_curve(y_true_bin[:, i], y_score[:, i])
@@ -285,10 +265,8 @@ def plot_roc_melhorada(
     titulo,
     outpath,
 ):
-    
     fig, ax = plt.subplots(figsize=(10, 8))
 
-    # Curva macro
     ax.plot(
         all_fpr,
         mean_tpr,
@@ -298,9 +276,7 @@ def plot_roc_melhorada(
         zorder=10,
     )
 
-    # Curvas por classe
     markers = ["o", "s", "^", "D", "v", "P", "X", "*"]
-
     for i, cls in enumerate(classes):
         ax.plot(
             fpr_ind[i],
@@ -314,39 +290,21 @@ def plot_roc_melhorada(
             zorder=5 + i,
         )
 
-    # Classificador aleatório
-    ax.plot(
-        [0, 1],
-        [0, 1],
-        linestyle="--",
-        linewidth=1.6,
-        alpha=0.8,
-        label="Random classifier",
-        zorder=1,
-    )
-
+    ax.plot([0, 1], [0, 1], linestyle="--", linewidth=1.6, alpha=0.8, label="Random classifier", zorder=1)
     ax.set_xlim(-0.01, 1.01)
     ax.set_ylim(-0.01, 1.03)
     ax.set_xlabel("False Positive Rate", fontsize=12)
     ax.set_ylabel("True Positive Rate", fontsize=12)
     ax.set_title(titulo, fontsize=14, fontweight="bold")
     ax.grid(True, linestyle=":", alpha=0.35)
-
-    ax.legend(
-        fontsize=9,
-        loc="lower right",
-        frameon=True,
-        fancybox=True,
-        framealpha=0.93,
-    )
+    ax.legend(fontsize=9, loc="lower right", frameon=True, fancybox=True, framealpha=0.93)
 
     plt.tight_layout()
     plt.savefig(outpath, dpi=600, bbox_inches="tight")
     plt.close()
 
 
-
-# 6) NÚCLEO DO MODELO BAYESIANO DISCRETO
+# --- Discrete Conditional Probability Tables (CPTs) ---
 def treinar_cpts_discretas(
     train_df,
     disc_metrics,
@@ -398,8 +356,7 @@ def inferir_amostra(row, classes, disc_metrics, cpts, prior_attack, topo_observa
     return pred, probas.tolist()
 
 
-
-# 7) PIPELINE PRINCIPAL
+# --- Core Cross-Validation Experiment Pipeline ---
 def executar_experimento_rb_otimizado(
     file_path,
     n_iteracoes=100,
@@ -434,7 +391,7 @@ def executar_experimento_rb_otimizado(
     topologias = sorted(df["topologyNodes"].unique().tolist())
     cenarios = sorted(df["scenario"].unique().tolist())
 
-    print(f"Log: Dataset liso. Alvos: {cenarios} | Topologias: {topologias} | N: {len(df)}")
+    print(f"Log: Parsed dataset successfully. Targets: {cenarios} | Topologies: {topologias} | N: {len(df)}")
 
     resultados = {
         n: {
@@ -518,7 +475,7 @@ def executar_experimento_rb_otimizado(
             resultados[n]["y_real_all"], resultados[n]["y_proba_all"], classes=cenarios
         )
 
-        print(f"\n--- Métricas Finais - {n} nós ---")
+        print(f"\n--- Final Validation Metrics - {n} Nodes ---")
         print(f"Accuracy:  {acc_m:.4f} ± {acc_s:.4f}")
         print(f"F1 Macro:  {f1_m:.4f} ± {f1_s:.4f}")
         print(f"ROC AUC:   {auc_m:.4f} ± {auc_s:.4f}")
@@ -528,7 +485,7 @@ def executar_experimento_rb_otimizado(
         cm_rep = resultados[n]["cm_iter"][idx_rep]
 
         plot_confusion(
-            cm_rep, labels=cenarios, title=f"Matriz de Confusão - {n} nós",
+            cm_rep, labels=cenarios, title=f"Confusion Matrix - {n} Nodes",
             outpath=output_dir / f"matriz_confusao_{n}_nos_representativa.png"
         )
 
@@ -536,7 +493,7 @@ def executar_experimento_rb_otimizado(
         plot_roc_melhorada(
             all_fpr=all_fpr, mean_tpr=mean_tpr, roc_auc_macro=roc_macro_global,
             roc_auc_ind=roc_auc_ind, fpr_ind=fpr_ind, tpr_ind=tpr_ind, classes=cenarios,
-            titulo=f"Curva ROC (OvR) - {n} nós", outpath=output_dir / f"roc_auc_{n}_nos_global.png"
+            titulo=f"ROC Curve (OvR) - {n} Nodes", outpath=output_dir / f"roc_auc_{n}_nos_global.png"
         )
 
         linhas_resumo.append({
