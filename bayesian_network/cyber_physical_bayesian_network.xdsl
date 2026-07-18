@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This network was created and adapted automatically for Osvaldo Lo Nunes Sebastiao based on the new Cyber-Physical FANET IDS context -->
+<smile version="1.0" id="cyber_physical_bayesian_network" numsamples="1000" discsamples="10000">
+  <nodes>
+    <cpt id="Scenario">
+      <state id="Normal" /><state id="Flooding" /><state id="Blackhole" />
+      <probabilities>0.333333 0.333333 0.333333</probabilities>
+    </cpt>
+
+    <cpt id="Node_Speed_ms">
+      <state id="Low" /><state id="Medium" /><state id="High" />
+      <probabilities>0.333333 0.333333 0.333333</probabilities>
+    </cpt>
+
+    <cpt id="Neighbor_Count">
+      <state id="Low" /><state id="Medium" /><state id="High" />
+      <probabilities>0.333333 0.333333 0.333333</probabilities>
+    </cpt>
+
+    <cpt id="PDR_Percentage">
+      <state id="Low" /><state id="Medium" /><state id="High" />
+      <parents>Scenario Node_Speed_ms</parents>
+      <!-- Illustrative CPT balanced with Laplace smoothing
+           (3 states x 3 states = 9 parent combinations, each with 3 outcomes = 27 values) -->
+      <probabilities>
+        0.05 0.05 0.90 0.10 0.20 0.70 0.40 0.40 0.20
+        0.80 0.15 0.05 0.90 0.05 0.05 0.95 0.03 0.02
+        0.95 0.04 0.01 0.95 0.04 0.01 0.98 0.01 0.01
+      </probabilities>
+    </cpt>
+
+    <cpt id="E2E_Delay_ms">
+      <state id="Low" /><state id="Medium" /><state id="High" />
+      <parents>Scenario</parents>
+      <probabilities>
+        0.70 0.20 0.10
+        0.05 0.15 0.80
+        0.60 0.30 0.10
+      </probabilities>
+    </cpt>
+
+    <cpt id="Throughput_Kbps">
+      <state id="Low" /><state id="Medium" /><state id="High" />
+      <parents>Scenario</parents>
+      <probabilities>
+        0.10 0.30 0.60
+        0.05 0.10 0.85
+        0.90 0.08 0.02
+      </probabilities>
+    </cpt>
+
+    <cpt id="Queue_Drops">
+      <state id="Low" /><state id="Medium" /><state id="High" />
+      <parents>Scenario</parents>
+      <probabilities>
+        0.85 0.10 0.05
+        0.02 0.08 0.90
+        0.80 0.15 0.05
+      </probabilities>
+    </cpt>
+
+    <cpt id="Routing_Drops">
+      <state id="Low" /><state id="Medium" /><state id="High" />
+      <parents>Scenario</parents>
+      <probabilities>
+        0.90 0.08 0.02
+        0.75 0.20 0.05
+        0.01 0.04 0.95
+      </probabilities>
+    </cpt>
+
+    <cpt id="Control_Packets_Sent">
+      <state id="Low" /><state id="Medium" /><state id="High" />
+      <parents>Scenario</parents>
+      <probabilities>
+        0.60 0.30 0.10
+        0.10 0.20 0.70
+        0.50 0.40 0.10
+      </probabilities>
+    </cpt>
+
+    <cpt id="Energy_Consumed_J">
+      <state id="Low" /><state id="Medium" /><state id="High" />
+      <parents>Scenario</parents>
+      <probabilities>
+        0.70 0.25 0.05
+        0.05 0.15 0.80
+        0.65 0.25 0.10
+      </probabilities>
+    </cpt>
+  </nodes>
+
+  <extensions>
+    <genie version="1.0" app="GeNIe 5.0.4830.0 ACADEMIC" name="cyber_physical_bayesian_network">
+      <node id="Scenario">
+        <name>Operational Scenario</name>
+        <interior color="ffcccc" />
+        <outline color="800000" />
+        <font color="000000" name="Arial" size="8" />
+        <position>350 250 500 330</position>
+        <barchart active="true" width="248" height="72" />
+      </node>
+
+      <node id="Node_Speed_ms">
+        <name>Drone Speed</name>
+        <interior color="e5f6f7" />
+        <outline color="000080" />
+        <font color="000000" name="Arial" size="8" />
+        <position>60 40 210 120</position>
+        <barchart active="true" width="248" height="72" />
+      </node>
+
+      <node id="Neighbor_Count">
+        <name>Neighbor Count</name>
+        <interior color="e5f6f7" />
+        <outline color="000080" />
+        <font color="000000" name="Arial" size="8" />
+        <position>60 160 210 240</position>
+        <barchart active="true" width="248" height="72" />
+      </node>
+
+      <node id="PDR_Percentage">
+        <name>Packet Delivery Ratio (PDR)</name>
+        <interior color="fff2cc" />
+        <outline color="7f6000" />
+        <font color="000000" name="Arial" size="8" />
+        <position>350 40 500 120</position>
+        <barchart active="true" width="248" height="72" />
+      </node>
+
+      <node id="E2E_Delay_ms">
+        <name>End-to-End Delay</name>
+        <interior color="fff2cc" />
+        <outline color="7f6000" />
+        <font color="000000" name="Arial" size="8" />
+        <position>640 40 790 120</position>
+        <barchart active="true" width="248" height="72" />
+      </node>
+
+      <node id="Throughput_Kbps">
+        <name>Throughput</name>
+        <interior color="fff2cc" />
+        <outline color="7f6000" />
+        <font color="000000" name="Arial" size="8" />
+        <position>640 150 790 230</position>
+        <barchart active="true" width="248" height="72" />
+      </node>
+
+      <node id="Queue_Drops">
+        <name>Queue Drops</name>
+        <interior color="fff2cc" />
+        <outline color="7f6000" />
+        <font color="000000" name="Arial" size="8" />
+        <position>640 260 790 340</position>
+        <barchart active="true" width="248" height="72" />
+      </node>
+
+      <node id="Routing_Drops">
+        <name>Routing Drops</name>
+        <interior color="fff2cc" />
+        <outline color="7f6000" />
+        <font color="000000" name="Arial" size="8" />
+        <position>640 370 790 450</position>
+        <barchart active="true" width="248" height="72" />
+      </node>
+
+      <node id="Control_Packets_Sent">
+        <name>Control Packets Sent</name>
+        <interior color="fff2cc" />
+        <outline color="7f6000" />
+        <font color="000000" name="Arial" size="8" />
+        <position>350 450 500 530</position>
+        <barchart active="true" width="248" height="72" />
+      </node>
+
+      <node id="Energy_Consumed_J">
+        <name>Energy Consumption</name>
+        <interior color="fff2cc" />
+        <outline color="7f6000" />
+        <font color="000000" name="Arial" size="8" />
+        <position>60 370 210 450</position>
+        <barchart active="true" width="248" height="72" />
+      </node>
+    </genie>
+  </extensions>
+</smile>
