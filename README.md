@@ -1,52 +1,140 @@
-# eletrovalnunes_MANET_RB
+# Explainable Zero-Shot Portability of a Bayesian IDS in FANETs
 
-Probabilistic detection of Flooding attacks in mobile drone MANETs using Bayesian Networks and OMNeT++ digital twin simulation.
+This repository contains the source code, OMNeT++/INET simulation model, Bayesian
+Network, and dataset instructions associated with the study:
 
-## Overview
+**Explainable Assessment of the Zero-Shot Portability of a Bayesian IDS in FANETs**
 
-This repository contains the datasets, scripts, models, and experimental materials used in the study of cyberattack detection in mobile drone networks for e-Science applications.
+The framework trains and evaluates a multiclass Bayesian intrusion detection
+system in an OMNeT++/AODV source domain and assesses its zero-shot portability
+on an external NS-3 dataset.
 
-The proposed approach combines:
+## Repository structure
 
-- OMNeT++ digital twin simulation
-- MANET drone scenarios using AODV over IEEE 802.11
-- Flooding attack modeling
-- Bayesian Network inference
-- Performance evaluation through Accuracy, ROC-AUC, Confusion Matrix, PDR, Delay, Throughput, and Energy
+```text
+.
+├── analysis/
+│   └── fanet_bn_xai_pipeline.py
+├── bayesian_network/
+│   └── cyber_physical_bayesian_network.xdsl
+├── data/
+│   └── README.md
+├── docs/
+│   └── methodology_summary.md
+├── omnetpp/
+│   ├── package.ned
+│   ├── src/
+│   │   ├── BlackholePacketDropper.cc
+│   │   └── BlackholePacketDropper.h
+│   └── simulations/
+│       ├── BlackholePacketDropper.ned
+│       ├── FanetRouter.ned
+│       ├── electrosvalpadoca_fanet_topologies.ned
+│       ├── omnetpp.ini
+│       ├── config.xml
+│       └── package.ned
+├── results/
+├── CITATION.cff
+├── requirements.txt
+└── .gitignore
+```
 
-## Evaluated Scenarios
+## Experimental design
 
-- 30 nodes
-- 50 nodes
-- 100 nodes
+The OMNeT++/INET source domain uses:
 
-## Main Results
+- AODV routing;
+- linear UAV mobility at 10 m/s;
+- a 1000 m × 1000 m operational area;
+- topologies with 30, 50, and 100 UAVs;
+- periodic legitimate UDP traffic with 512-byte packets every 1 second;
+- Normal, Flooding, and Blackhole scenarios;
+- Flooding traffic with 1024-byte packets every 1 ms;
+- 50 repetitions per configuration.
 
-- Accuracy ≈ 95%
-- ROC-AUC between 0.987 and 0.993
-- Strong discrimination between Normal and Flooding conditions
+The Blackhole implementation preserves the normal AODV control process and
+drops packets handled by the malicious node at the IPv4 forwarding hook.
 
-## Repository Structure
+## Software environment
 
-Dataset files:
-- `Dataset_electrosvalnunes_manet.csv`
+The supplied project was developed around:
 
-Python scripts:
-- `metric_REDE_electrovalnunes_manet.py`
-- `Model_DectRB_electrosvalnunes_manet.py`
+- OMNeT++ 6.1;
+- INET 4.5.x;
+- Python 3.9 or newer;
+- GeNIe Modeler for the `.xdsl` Bayesian Network.
 
-Output results:
-- `resultados_rb_manet4/`
+Minor configuration adjustments may be required for other OMNeT++ or INET
+versions.
 
-## Reproducibility
+## Python installation
 
-All experiments can be reproduced using the provided dataset and scripts.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-## Citation
+On Windows PowerShell:
 
-If you use this repository for academic purposes, please cite the corresponding study.
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
 
-## Author
+## Running the Bayesian IDS pipeline
 
-Electrosvalnunes  (Osvaldo_Sebastiao)
-University of São Paulo (USP)
+Place the datasets in the `data/` directory and execute:
+
+```bash
+python analysis/fanet_bn_xai_pipeline.py \
+  --omnet data/Dataset_electrosvalnunes_manet_v2.csv \
+  --ns3 data/ns3_like_packet_loss_causes_v1_50k.csv \
+  --protocol OLSR \
+  --support 1500 \
+  --out results/OLSR
+```
+
+Protocol-specific examples:
+
+```bash
+python analysis/fanet_bn_xai_pipeline.py --omnet data/Dataset_electrosvalnunes_manet_v2.csv --ns3 data/ns3_like_packet_loss_causes_v1_50k.csv --protocol AODV --support 1500 --out results/AODV
+python analysis/fanet_bn_xai_pipeline.py --omnet data/Dataset_electrosvalnunes_manet_v2.csv --ns3 data/ns3_like_packet_loss_causes_v1_50k.csv --protocol OLSR --support 1500 --out results/OLSR
+python analysis/fanet_bn_xai_pipeline.py --omnet data/Dataset_electrosvalnunes_manet_v2.csv --ns3 data/ns3_like_packet_loss_causes_v1_50k.csv --protocol RPL --support 1500 --out results/RPL
+python analysis/fanet_bn_xai_pipeline.py --omnet data/Dataset_electrosvalnunes_manet_v2.csv --ns3 data/ns3_like_packet_loss_causes_v1_50k.csv --protocol DSR --support 1500 --out results/DSR
+```
+
+## OMNeT++ model
+
+See [`omnetpp/README.md`](omnetpp/README.md) for installation and execution
+instructions. The main configurations are:
+
+- `Normal30`, `Flooding30`, `Blackhole30`;
+- `Normal50`, `Flooding50`, `Blackhole50`;
+- `Normal100`, `Flooding100`, `Blackhole100`.
+
+## Datasets
+
+Dataset files are intentionally not embedded in this prepared archive because
+the local `file:///media/...` paths are accessible only on the author's
+computer. See [`data/README.md`](data/README.md) for filenames, provenance, and
+publication options.
+
+## Reproducibility note
+
+The Bayesian Network and Python pipeline currently use three quantile states:
+`Low`, `Medium`, and `High` (`q = 3`), matching the reported methodology.
+
+## License
+
+No repository-wide license has been assigned in this prepared version. Before
+making the repository public, select licenses that are appropriate for the
+code, simulation components, and datasets. Third-party datasets remain subject
+to their original terms.
+
+## Contact
+
+Osvaldo Lo Nunes Sebastião  
+Polytechnic School of the University of São Paulo  
+Instituto Superior Técnico Militar, Angola
