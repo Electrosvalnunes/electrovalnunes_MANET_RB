@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software or simulation model, please cite this repository and the associated paper."
+title: "Explainable Zero-Shot Portability of a Bayesian IDS in FANETs"
+type: software
+version: 1.0.0
+date-released: 2026-07-18
+authors:
+  - family-names: "Ló Nunes Sebastião"
+    given-names: "Osvaldo"
+  - family-names: "Valencia de Almeida"
+    given-names: "Felipe"
+  - family-names: "Rady de Almeida Junior"
+    given-names: "Jorge"
+repository-code: "https://github.com/USERNAME/fanet-bayesian-ids-portability"
+keywords:
+  - FANET
+  - intrusion detection
+  - Bayesian network
+  - OMNeT++
+  - NS-3
+  - explainable artificial intelligence
+license: "NOASSERTION"

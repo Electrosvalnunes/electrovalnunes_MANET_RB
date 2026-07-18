@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Analysis outputs
+results/*
+!results/.gitkeep
+
+# OMNeT++ outputs
+*.sca
+*.vec
+*.vci
+*.elog
+*.anf
+omnetpp/out/
+omnetpp/simulations/results/
+omnetpp/src/Makefile
+omnetpp/Makefile
+omnetpp/src/*.o
+omnetpp/src/*.so
+omnetpp/src/*.dll
+omnetpp/src/*.exe
+
+# OMNeT++/Eclipse machine-specific metadata
+.qtenvrc
+.project
+.cproject
+.settings/
+.metadata/
+.nedfolders
+.oppbuildspec
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

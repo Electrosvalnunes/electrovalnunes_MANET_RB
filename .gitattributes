@@ -1,0 +1,7 @@
+*.py text eol=lf
+*.ned text eol=lf
+*.ini text eol=lf
+*.cc text eol=lf
+*.h text eol=lf
+*.xml text eol=lf
+*.xdsl text eol=lf
