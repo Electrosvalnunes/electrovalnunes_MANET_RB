@@ -11,7 +11,7 @@ authors:
     given-names: "Felipe"
   - family-names: "Rady de Almeida Junior"
     given-names: "Jorge"
-repository-code: "https://github.com/USERNAME/fanet-bayesian-ids-portability"
+repository-code: "https://github.com/Electrosvalnunes/electrovalnunes_MANET_RB"
 keywords:
   - FANET
   - intrusion detection
