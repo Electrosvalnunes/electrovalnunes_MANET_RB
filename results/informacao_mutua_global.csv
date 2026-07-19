@@ -1,0 +1,19 @@
+Atributo,Ambiente,Mutual_Information
+Node_Speed_ms,OMNeT++,0.018422700584176305
+Node_Speed_ms,NS-3 Adaptive,0.006331088451454608
+Neighbor_Count,OMNeT++,0.035241798886791006
+Neighbor_Count,NS-3 Adaptive,0.000279498129624578
+PDR_Percentage,OMNeT++,0.804581710056527
+PDR_Percentage,NS-3 Adaptive,0.26578680707362845
+E2E_Delay_ms,OMNeT++,0.15916799955424143
+E2E_Delay_ms,NS-3 Adaptive,0.3355275758777369
+Energy_Consumed_J,OMNeT++,0.21857457765640154
+Energy_Consumed_J,NS-3 Adaptive,0.03711832553726291
+Throughput_Kbps,OMNeT++,0.46865831860440504
+Throughput_Kbps,NS-3 Adaptive,0.03322093990448499
+Queue_Drops,OMNeT++,0.3195788351690587
+Queue_Drops,NS-3 Adaptive,0.0
+Routing_Drops,OMNeT++,0.6365166317009692
+Routing_Drops,NS-3 Adaptive,0.0
+Control_Packets_Sent,OMNeT++,0.00013683960204119439
+Control_Packets_Sent,NS-3 Adaptive,0.11011565122073778
